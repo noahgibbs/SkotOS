@@ -214,28 +214,6 @@ apt-get install mariadb-server php php-fpm php-mysql certbot python3-certbot-ngi
 # Misc and Debugging
 apt-get install debconf-utils -y  # For debconf-get-selections
 
-if [ ! -z "$FQDN_JITSI" ]
-then
-  apt install gnupg2 apt-transport-https -y
-
-  # Install OpenJDK 8 for Jitsi (https://adoptopenjdk.net/installation.html#linux-pkg)
-  wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
-  echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb buster main" | sudo tee /etc/apt/sources.list.d/adoptopenjdk.list
-
-  # Add Jitsi package repository (https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-quickstart)
-  curl https://download.jitsi.org/jitsi-key.gpg.key | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg'
-  echo 'deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/' | sudo tee /etc/apt/sources.list.d/jitsi-stable.list > /dev/null
-
-  apt update
-  apt install adoptopenjdk-8-hotspot -y
-
-  echo "jitsi-videobridge jitsi-videobridge/jvb-hostname string $FQDN_JITSI" | debconf-set-selections
-  echo "jitsi-videobridge2 jitsi-videobridge/jvb-hostname string $FQDN_JITSI" | debconf-set-selections
-  echo "jitsi-meet jitsi-meet/cert-choice select Self-signed certificate will be generated" | debconf-set-selections
-  export DEBIAN_FRONTEND=noninteractive
-  apt install jitsi-meet -y
-fi
-
 # Email (outgoing)
 # Need to update this? See: https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-debian-10
 # Need additional selections? See: https://manpages.debian.org/stretch/debconf-utils/debconf-get-selections.1.en.html
@@ -711,16 +689,87 @@ nginx -s reload
 certbot --non-interactive --nginx --agree-tos certonly -m webmaster@$FQDN_CLIENT -d $FQDN_CLIENT
 certbot --non-interactive --nginx --agree-tos certonly -m webmaster@$FQDN_CLIENT -d $FQDN_LOGIN
 
-# Register certbot certificate and re-add Jitsi site if and only if Jitsi is turned on
+# Remove Jitsi NGinX site, and re-add if and only if Jitsi is turned on
 rm -f "/etc/nginx/sites-enabled/$FQDN_JITSI.conf"
+
 if [ ! -z "$FQDN_JITSI" ]
 then
-  certbot certonly --non-interactive --nginx --agree-tos -m webmaster@$FQDN_CLIENT -d $FQDN_JITSI
+  # Jitsi wants to request its own LetsEncrypt cert, but sometimes fails to do so...
+  #certbot certonly --non-interactive --nginx --agree-tos -m webmaster@$FQDN_CLIENT -d $FQDN_JITSI
 
-  # Switch Jitsi-meet to using LetsEncrypt Certbot certificates
+  # Install various Jitsi packages
+  apt install gnupg2 apt-transport-https -y
+
+  # Install OpenJDK 8 for Jitsi (https://adoptopenjdk.net/installation.html#linux-pkg)
+  wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
+  echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb buster main" | sudo tee /etc/apt/sources.list.d/adoptopenjdk.list
+
+  # Add Jitsi package repository (https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-quickstart)
+  curl https://download.jitsi.org/jitsi-key.gpg.key | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg'
+  echo 'deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/' | sudo tee /etc/apt/sources.list.d/jitsi-stable.list > /dev/null
+
+  apt update
+  apt install adoptopenjdk-8-hotspot -y
+
+  echo "jitsi-videobridge jitsi-videobridge/jvb-hostname string $FQDN_JITSI" | debconf-set-selections
+  echo "jitsi-videobridge2 jitsi-videobridge/jvb-hostname string $FQDN_JITSI" | debconf-set-selections
+  echo "jitsi-meet jitsi-meet/cert-choice select Self-signed certificate will be generated" | debconf-set-selections
+  export DEBIAN_FRONTEND=noninteractive
+  apt install jitsi-meet -y
+
+  # The Jitsi script to use LetsEncrypt certs seems to just fail to work, frequently.
+  # But it also configures Jitsi's coturn server (if it works?) so I'll run it anyway...
   echo "admin@$FQDN_CLIENT" | /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh
 
-  ln -s "/etc/nginx/sites-available/$FQDN_JITSI.conf" "/etc/nginx/sites-enabled/$FQDN_JITSI.conf"
+  # Sometimes the Jitsi LetsEncrypt script fails but doesn't notice...
+  # And we do *not* fix them, because the script can also fail to update the turn server certs.
+  # Instead, we fail loudly here.
+  if grep "ssl_certificate /etc/jitsi/meet" /etc/nginx/sites-available/$FQDN_JITSI.conf
+  then
+    echo "Certs were NOT successfully changed to LetsEncrypt in Jitsi NGinX config"
+    exit -1
+  fi
+
+  # Reenable Jitsi NGinX site (at least once NGinX reloads)
+  if [ ! -e "/etc/nginx/sites-enabled/$FQDN_JITSI.conf" ]
+  then
+    ln -s "/etc/nginx/sites-available/$FQDN_JITSI.conf" "/etc/nginx/sites-enabled/$FQDN_JITSI.conf"
+  fi
+
+  # Temporarily turn off securing the domain. Let's test this manually first.
+  # Secure the Jitsi domain. See: https://jitsi.github.io/handbook/docs/devops-guide/secure-domain
+  sed -i 's/authentication = "anonymous"/authentication = "internal_hashed"/' /etc/prosody/conf.avail/$FQDN_JITSI.cfg.lua
+#
+#  if grep -- "-- added anon domain for SkotOS" /etc/prosody/conf.avail/$FQDN_JITSI.cfg.lua
+#  then
+#    echo "Already added anon domain, we're fine."
+#  else
+#    sed -i "s/VirtualHost \"auth.$FQDN_JITSI\"/VirtualHost \"guest.$FQDN_JITSI\" -- added anon domain for SkotOS\n    authentication = \"anonymous\"\n    c2s_require_encryption = false\n\nVirtualHost \"auth.$FQDN_JITSI\"/" /etc/prosody/conf.avail/$FQDN_JITSI.cfg.lua
+#  fi
+#
+#  sed -i "s/\/\/ anonymousdomain.*/anonymousdomain: 'guest.$FQDN_JITSI',/" /etc/jitsi/meet/$FQDN_JITSI-config.js
+#
+#  JICOFO_PROPERTIES=/etc/jitsi/jicofo/sip-communicator.properties
+#  if grep "org.jitsi.jicofo.auth.URL" $JICOFO_PROPERTIES
+#  then
+#    echo "Already added jicofo.auth.URL"
+#  else
+#    echo "org.jitsi.jicofo.auth.URL=XMPP:$FQDN_JITSI" >> $JICOFO_PROPERTIES
+#  fi
+#
+#  # Do we need this? I'm a bit scared of *not* reloading before we mess with accounts.
+#  systemctl restart prosody
+#  systemctl restart jicofo
+#  systemctl restart jitsi-videobridge2
+#
+#  prosodyctl register skotos-admin $FQDN_JITSI $USERPASSWORD
+#
+#  # Have to restart *after* creating an account so the new account is recognised
+#  systemctl restart prosody
+#  systemctl restart jicofo
+#  systemctl restart jitsi-videobridge2
+
+  # We shouldn't have Jigasi installed or configured, so skip that part of the config.
 fi
 
 ####
