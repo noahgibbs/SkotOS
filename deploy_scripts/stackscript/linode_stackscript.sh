@@ -722,7 +722,7 @@ then
 
   sudo -u skotos -g skotos docker-compose up -d
 
-  # Also possible: COMPOSE_INTERACTIVE_NO_CLI=1 (but I'd need to pass it through sudo somehow)
+  # Also possible instead of -T: COMPOSE_INTERACTIVE_NO_CLI=1 (but I'd need to pass it through sudo somehow)
   sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
 prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
 JITSI_COMMANDS
