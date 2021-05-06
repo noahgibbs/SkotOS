@@ -725,10 +725,9 @@ then
   # Also possible: COMPOSE_INTERACTIVE_NO_CLI=1 (but I'd need to pass it through sudo somehow)
   sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
 prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
-systemctl restart prosody
-systemctl restart jicofo
-systemctl restart jitsi-videobridge2
 JITSI_COMMANDS
+  # Do we need to restart Jitsi-related services after adding a user? The Docker docs don't
+  # mention it, but it's required when doing this with Debian packages...
   popd
 
   cat >/etc/nginx/sites-available/jitsi.conf <<JitsiNGinXConfig
