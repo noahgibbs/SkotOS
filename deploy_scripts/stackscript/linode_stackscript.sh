@@ -756,6 +756,10 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
+    location / {
+        proxy_pass http://localhost:8000;
+    }
+
     ssl_certificate /etc/letsencrypt/live/$FQDN_JITSI/fullchain.pem; # managed by Certbot
     ssl_certificate_key /etc/letsencrypt/live/$FQDN_JITSI/privkey.pem; # managed by Certbot
 }
