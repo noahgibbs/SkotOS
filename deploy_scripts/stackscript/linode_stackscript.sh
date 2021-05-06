@@ -749,6 +749,9 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
     }
+    # Colibri is "lightweight bridging" for XMPP and Jitsi. Basically, this is what gets used for coordinating
+    # if there are 3 or more participants. Related: some Jitsi stuff will only break if there are 3 more more
+    # participants, so test with at least that many.
     location /colibri-ws/ {
         proxy_pass https://localhost:8443/colibri-ws/;
         proxy_http_version 1.1;
