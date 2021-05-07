@@ -10,9 +10,14 @@
 
 require('./strophe-1.4.2.umd.js');
 
-var SKOTOS_SERVER = 'wss://meet.testing-14.madrubyscience.com/xmpp-websocket';
-var JID = 'skotosadmin';
-var PASSWORD = 'S00perS3krit';
+// Note: serviceUrl can end in ?room=<roomname>
+// Guest Jabber IDs can be... interesting: d715fc3d-2c2a-41d7-a9fa-c9e068d6ebe3@guest.meet.jitsi/ww3Xlee2
+
+// WSS URL from JS console: wss://meet.testing-14.madrubyscience.com/xmpp-websocket?room=rwottesting
+
+var SKOTOS_SERVER = 'wss://meet.testing-14.madrubyscience.com/xmpp-websocket?room=rwottesting';
+var JID = 'skotosadmin@auth.jitsi.meet';
+var PASSWORD = 'Miskell33';
 
 var connection = null;
 
