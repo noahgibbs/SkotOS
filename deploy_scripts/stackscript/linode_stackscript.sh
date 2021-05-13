@@ -759,9 +759,10 @@ server {
     }
 
     # If we just pass all traffic to port 8000 then the web UI is available on the Jitsi domain.
-    # And it turns out we do *not* want that.
+    # But it's hard to tell how to block the web UI when Jitsi uses the room name as the start
+    # of the URL...
 
-    location /external_api.js {
+    location / {
         proxy_pass http://localhost:8000;
     }
 
