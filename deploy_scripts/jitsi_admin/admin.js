@@ -2,86 +2,98 @@
 // It needs to connect to the server to hold chatrooms open.
 // It should also be able to kick users approximately on demand (eventually.)
 
-// Docs on Strophe, the XMPP client it uses:
-// Strophe JS lib: https://strophe.im/strophejs/
-// Strophe class API docs: https://strophe.im/strophejs/doc/1.3.0/index/Classes.html
-// Strophe example code: https://github.com/strophe/strophejs/tree/master/examples
+// Puppeteer code based on https://gist.github.com/saghul/179feba3df9f12ddf316decd0181b03e
+const http = require('http')
+const path = require('path')
+const puppeteer = require('puppeteer')
 
+// Possible way to capture video:
+// sudo apt-get install chromium-browser xvfb
+// Then use xvfb as output device for Chrome (see: https://github.com/r-oung/jitsi-headless)
 
-require('./strophe-1.4.2.umd.js');
+async function main(room, baseUrl) {
+  const chromeArgs = [
+    // Disable sandboxing, gives an error on Linux and supposedly breaks fake audio capture
+    '--no-sandbox',
+    '--disable-extensions',
+    '--disable-setuid-sandbox',
+    // Automatically give permission to use media devices
+    '--use-fake-ui-for-media-stream',
+    // feeds a test pattern to getUserMedia() instead of live camera input
+    '--use-fake-device-for-media-stream',
+    // Silence all output, just in case
+    '--alsa-output-device=plug:null',
+    // Performance from https://stackoverflow.com/a/58589026/684353
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--single-process',
+    '--disable-gpu',
+  ]
 
-// Note: serviceUrl can end in ?room=<roomname>
-// Guest Jabber IDs can be... interesting: d715fc3d-2c2a-41d7-a9fa-c9e068d6ebe3@guest.meet.jitsi/ww3Xlee2
+  const browser = await puppeteer.launch({
+    args: chromeArgs,
+    handleSIGINT: false,
+  })
 
-// WSS URL from JS console: wss://meet.testing-14.madrubyscience.com/xmpp-websocket?room=rwottesting
+  const page = await browser.newPage()
+  page.on('console', (msg) => console.log('CONSOLE:', msg.text()))
 
-var SKOTOS_SERVER = 'wss://meet.testing-14.madrubyscience.com/xmpp-websocket?room=rwottesting';
-var JID = 'skotosadmin@auth.jitsi.meet';
-var PASSWORD = 'Miskell33';
+  const meetArgs = [
+    // Disable receiving of video
+    'config.channelLastN=0',
+    // Mute our audio
+    'config.startWithAudioMuted=true',
+    // Don't send video
+    'config.startWithVideoMuted=true',
+    // No pre-join page
+    'config.prejoinPageEnabled=false',
+    // Don't use simulcast to save resources on the sender (our) side
+    'config.disableSimulcast=true',
+    // No need to process audio levels
+    'config.disableAudioLevels=true',
+    // Disable P2P mode due to a bug in Jitsi Meet
+    'config.p2p.enabled=false',
+    // Is this useful? Does it even work?
+    'config.startSilent=true',
+  ]
+  const url = `${baseUrl}/${room}#${meetArgs.join('&')}`
+  console.log(`Loading ${url}`)
 
-var connection = null;
+  await page.goto(url)
 
-function log(msg) 
-{
-    console.log(msg + "\n");
+  // Set some friendly display name
+  await page.evaluate('APP.conference.changeLocalDisplayName("Fake Client");')
+
+  console.log('Running...')
+
+  return async () => {
+    await page.evaluate('APP.conference.hangup();')
+    await page.close()
+    await browser.close()
+    console.log('Connection to room ' + room + ' stopped.')
+  }
 }
 
-function onConnect(status)
-{
-    if (status == Strophe.Status.CONNECTING) {
-        log('Strophe is connecting.');
-    } else if (status == Strophe.Status.CONNFAIL) {
-        log('Strophe failed to connect.');
-    } else if (status == Strophe.Status.DISCONNECTING) {
-        log('Strophe is disconnecting.');
-    } else if (status == Strophe.Status.DISCONNECTED) {
-        log('Strophe is disconnected.');
-    } else if (status == Strophe.Status.CONNECTED) {
-        log('Strophe is connected.');
-        log('ECHOBOT: Send a message to ' + connection.jid + 
-            ' to talk to me.');
+const jitsiDomain = process.env.JITSI_DOMAIN || 'https://meet.testing-14.madrubyscience.com'
 
-        connection.addHandler(onMessage, null, 'message', null, null,  null); 
-        //connection.send($pres().tree());
-    }
-}
+let close = undefined;
 
-function onMessage(msg) {
-    var to = msg.getAttribute('to');
-    var from = msg.getAttribute('from');
-    var type = msg.getAttribute('type');
-    var elems = msg.getElementsByTagName('body');
+setTimeout(function () {
+    const room = "RWOTTest";
+    close = await main(room, jitsiDomain);
+});
 
-    if (type == "chat" && elems.length > 0) {
-        var body = elems[0];
+// Shut it down...
+setTimeout(function () { await close() }, 5000);
 
-        log('ECHOBOT: I got a message from ' + from + ': ' + 
-            Strophe.getText(body));
-    
-        //var reply = $msg({to: from, from: to, type: 'chat'})
-        //    .cnode(Strophe.copyElement(body));
-        //connection.send(reply.tree());
-
-        //log('ECHOBOT: I sent ' + from + ': ' + Strophe.getText(body));
-    }
-
-    // we must return true to keep the handler alive.  
-    // returning false would remove it after it finishes.
-    return true;
-}
-
-connection = new Strophe.Connection(SKOTOS_SERVER);
-connection.connect(JID, PASSWORD, onConnect);
-
-// Uncomment the following lines to spy on the wire traffic.
-connection.rawInput = function (data) { log('RECV: ' + data); };
-connection.rawOutput = function (data) { log('SEND: ' + data); };
-
-// Uncomment the following line to see all the debug output.
-Strophe.log = function (level, msg) { log('LOG: ' + msg); };
-
-function disconnect() {
-    connection.disconnect();
-}
-
-setTimeout(disconnect, 5000);
+// Manual handling on SIGINT to gracefully hangup and exit
+process.on('SIGINT', async () => {
+  if (close) {
+    console.log('Exiting...')
+    await close()
+    console.log('Done!')
+  }
+  process.exit()
+});
