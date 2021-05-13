@@ -722,12 +722,11 @@ then
 
   sudo -u skotos -g skotos docker-compose up -d
 
-  # Also possible instead of -T: COMPOSE_INTERACTIVE_NO_CLI=1 (but I'd need to pass it through sudo somehow)
-  sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
-prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
-JITSI_COMMANDS
-  # Do we need to restart Jitsi-related services after adding a user? The Docker docs don't
-  # mention it, but it's required when doing this with Debian packages...
+  # When/if we go back to using Jitsi auth, this creates an account
+#  sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
+#prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
+#JITSI_COMMANDS
+
   popd
 
   cat >/etc/nginx/sites-available/jitsi.conf <<JitsiNGinXConfig
@@ -759,7 +758,10 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location / {
+    # If we just pass all traffic to port 8000 then the web UI is available on the Jitsi domain.
+    # And it turns out we do *not* want that.
+
+    location /external_api.js {
         proxy_pass http://localhost:8000;
     }
 
