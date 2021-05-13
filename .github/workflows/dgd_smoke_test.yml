@@ -37,10 +37,10 @@ jobs:
         run: git clone https://github.com/ChatTheatre/wafer.git
 
       - name: Run wafer
-        run: cd wafer && bundle && ruby -Ilib ./exe/wafer
+        run: cd wafer && bundle && ruby -Ilib ./exe/wafer >../log/wafer_log.txt 2>&1 &
 
       - name: Show wafer log
-        run: cat log/wafer_log.txt || echo "Could not find wafer_log.txt"
+        run: sleep 1 && cat log/wafer_log.txt || echo "Could not find wafer_log.txt"
 
       - name: Test that wafer is running successfully
         run: pgrep -f "rackup -p 2072"
