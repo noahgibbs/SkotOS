@@ -13,6 +13,8 @@ function addJitsiComponentsTo(settingsDivName) {
 }
 
 function initJitsi() {
+    printUnscreened("Note: starting with audio chat muted, make sure you can see the right sidebar for audio controls.", "connection debug");
+
     jitsiScriptLoaded = false;
     jitsiMidMute = false;
     jitsiAddedAudioInputListener = false;
