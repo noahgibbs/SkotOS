@@ -1,4 +1,7 @@
 "use strict";
+
+// If you're not using Audio chat, remove the calls to anything marked "Jitsi".
+
 //-----Component Setup
 	var bigMapHREF;
 	function initTheatre() {
@@ -7,9 +10,11 @@
 		addComponent('clientui'       , 'skotos_logo');
 		addComponent('save_button'  , 'clientui', false, 'saveCurrentWindow', [], '<i class="fas fa-file-download"></i>', 'Save Log');
 		addComponent('settings_button', 'clientui', false, 'openSettings', [], '<i class="fas fa-bars"></i>', 'Client Preferences');
-		addComponent('newplayers'     , 'right'   , false, 'openerWin', ['http://game.gables.chattheatre.com/Theatre/starting.sam'], '<div class="button" alt="Getting Started" title="Getting Started">Getting Started</div>');
-		addComponent('newplayers'     , 'right'   , false, 'openerWin', ['http://game.gables.chattheatre.com/Theatre/mastering.sam'], '<div class="button" alt="Mastering Chat" title="Mastering Chat">Mastering Chat</div>');
+		addComponent('newplayers_gs'     , 'right'   , false, 'openerWin', ['http://game.gables.chattheatre.com/Theatre/starting.sam'], '<div class="button" alt="Getting Started" title="Getting Started">Getting Started</div>');
+		addComponent('newplayers_mc'     , 'right'   , false, 'openerWin', ['http://game.gables.chattheatre.com/Theatre/mastering.sam'], '<div class="button" alt="Mastering Chat" title="Mastering Chat">Mastering Chat</div>');
 		addComponent('right_fill'     , 'right'   , 'fill');
+		addComponent('audio_settings' , 'right'   , false);
+		addJitsiComponents('audio_settings');
 		addComponent('image_map'      , 'right'   , false, 'popupMapWindow', []);
 		addComponent('image_map_img'  , 'image_map', false);
 		addComponent('comp_nw', 'right_fill', 'comp_button', 'compassArrow', ['northwest'], false, 'go northwest');
@@ -20,6 +25,8 @@
 		addComponent('comp_sw', 'right_fill', 'comp_button', 'compassArrow', ['southwest'], false, 'go southwest');
 		addComponent('comp_s' , 'right_fill', 'comp_button', 'compassArrow', ['south'],     false, 'go south');
 		addComponent('comp_se', 'right_fill', 'comp_button', 'compassArrow', ['southeast'], false, 'go southeast');
+
+		initJitsi();
 	}
 
 	function updateCompass(bitfield, image, dir, bit) {
@@ -34,6 +41,12 @@
 	function doSkoot(num, msg) {
 		num = Number(num);
 		console.log("SKOOT " + num + " " + msg);
+
+		if(isJitsiSkoot(num)) {
+			doJitsiSkoot(num, msg);
+			return;
+		}
+
 		switch (num) {
 		case 1:
 			var img = document.getElementById("image_map_img");
@@ -88,7 +101,7 @@
 		}
 	}
 	function popupMapWindow() {
-			popupArtWin(bigMapHREF, 'Map', 'Lovecraft Country Overview Map');
+			popupArtWin(bigMapHREF, 'Map', 'SkotOS Overview Map');
 	}
 	function compassArrow(direction) {
 		sendUI('go ' + direction);
@@ -360,4 +373,4 @@
 		artwin.focus();
     }
 //-----Initialization Code
-	var serverCode = "CM";
+	var serverCode = "Gables";
