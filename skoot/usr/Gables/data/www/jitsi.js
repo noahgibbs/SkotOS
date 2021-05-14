@@ -6,10 +6,10 @@ var jitsiDomain, jitsiNickname, jitsiServerMuted, jitsiRoom, jitsiClientMuted, j
 var jitsiMidMute, jitsiAddedAudioInputListener, jitsiLastAudioDevice, jitsiRoomPrefix;
 
 function addJitsiComponentsTo(settingsDivName) {
-    addComponent('audio_silence'  , 'audio_settings', false, 'toggleSilenced', [], '<div class="button"><i id="silence_button" title="speaker shows whether you are playing audio chat" class="silenced fas fa-volume-mute"></i><span id="silence_indicator">Audio Chat</span></div>')
-    addComponent('audio_mute'     , 'audio_settings', false, 'toggleClientMuted', [], '<div class="button"><i id="mute_button" title="microphone shows whether you have muted yourself" class="muted fas fa-microphone-alt-slash"></i><span id="chat_indicator" title="text color shows whether server has muted you...">Mute/Unmute</span></div>');
-    addComponent('audio_roomtext' , 'audio_settings', false, false, [], '<div class="button">Room: <span id="audio_room"></span</div>');
-    //addComponent('audio_device'     , 'right'   , 'audio_device', false, [], '<select id="audio_input_devices"></div>');
+    addComponent('audio_silence'  , settingsDivName, false, 'toggleSilenced', [], '<div class="button"><i id="silence_button" title="speaker shows whether you are playing audio chat" class="silenced fas fa-volume-mute"></i><span id="silence_indicator">Audio Chat</span></div>')
+    addComponent('audio_mute'     , settingsDivName, false, 'toggleClientMuted', [], '<div class="button"><i id="mute_button" title="microphone shows whether you have muted yourself" class="muted fas fa-microphone-alt-slash"></i><span id="chat_indicator" title="text color shows whether server has muted you...">Mute/Unmute</span></div>');
+    addComponent('audio_roomtext' , settingsDivName, false, false, [], '<div class="button">Room: <span id="audio_room"></span</div>');
+    //addComponent('audio_device'   , settingsDivName , 'audio_device', false, [], '<select id="audio_input_devices"></div>');
 }
 
 function initJitsi() {
