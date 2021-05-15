@@ -16,3 +16,6 @@ Bilbo is the original scripting language for SkotOS, and should be deprecated in
 
 At some point after we can cold boot, we need to search and delete all bilbo-related code in SkotOS.
 
+## Port 90
+
+FileWOE / ExportD is long-broken. The old implementation hasn't been hooked up to the port in any recent year, and the current implementation is a no-op. These days we'd do the same thing with Sync, VaultTool and/or GitHub. Anything FileWOE or ExportD can go, and port 90 can be closed or reused.
