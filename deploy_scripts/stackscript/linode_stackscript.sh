@@ -723,9 +723,9 @@ then
   sudo -u skotos -g skotos docker-compose up -d
 
   # When/if we go back to using Jitsi auth, this creates an account
-#  sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
-#prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
-#JITSI_COMMANDS
+  sudo -u skotos -g skotos docker-compose exec -T prosody /bin/bash <<JITSI_COMMANDS
+prosodyctl --config /config/prosody.cfg.lua register skotosadmin meet.jitsi $USERPASSWORD
+JITSI_COMMANDS
 
   popd
 
