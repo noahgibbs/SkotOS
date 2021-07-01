@@ -700,24 +700,18 @@ if [ ! -z "$FQDN_JITSI" ]
 then
   certbot certonly --non-interactive --nginx --agree-tos -m webmaster@$FQDN_CLIENT -d $FQDN_JITSI
 
-  rm -rf /var/jitsi-release
-  mkdir -p /var/jitsi-release
-  pushd /var/jitsi-release
-  wget -c https://github.com/jitsi/docker-jitsi-meet/archive/refs/tags/stable-5765-1.tar.gz
+  # We use a docker-jitsi-meet config for docker-compose based on a stable release, originally in 2021.
+  # The files here can be updated from a release -- try not to modify them much, where possible.
+  pushd /var/skotos/deploy_scripts/stackscript/docker-jitsi-meet
 
-  tar zxvf stable-5765-1.tar.gz
-  cd docker-jitsi-meet-stable-5765-1
-  mv * .g* ../
-  cd ..
-  rmdir docker-jitsi-meet-stable-5765-1
-
-  chown -R skotos:skotos /var/jitsi-release
-
+  # Copy the base .env file and autogenerate secure per-install passwords for it.
   sudo -u skotos -g skotos cp /var/skotos/deploy_scripts/stackscript/docker-jitsi.env .env
   ./gen-passwords.sh # add passwords to the .env file
+
+  # All the Jitsi-related configuration will need to be possible to put into ~skotos directories
   sudo -u skotos -g skotos mkdir -p ~skotos/.jitsi-meet-cfg/{web/letsencrypt,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
 
-  sed -i "s/PUBLIC_URL=https:\/\/meet.example.com:8443/PUBLIC_URL=https:\/\/$FQDN_JITSI/" .env
+  sed -i "s/PUBLIC_URL=https:\/\/meet.example.com=https:\/\/$FQDN_JITSI/" .env
   sed -i "s/DOCKER_HOST_ADDRESS=1.1.1.1/DOCKER_HOST_ADDRESS=$IPADDR/" .env
 
   sudo -u skotos -g skotos docker-compose up -d
