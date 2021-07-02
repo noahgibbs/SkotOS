@@ -150,7 +150,7 @@ then
   ufw allow 10000/udp # For Jitsi Meet server
   ufw allow 3478/udp # For STUN server
   ufw allow 4443/tcp # For RTP media over TCP (says https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker)
-  ufw allow 5349/tcp # For fallback video/audio with coturn
+  ufw allow 5349/tcp # For fallback TLS-encrypted video/audio with coturn
 fi
 
 # Currently we do not expose other DGD ports like ExportD or TextIF.
@@ -752,10 +752,9 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    # If we just pass all traffic to port 8000 then the web UI is available on the Jitsi domain.
-    # But it's hard to tell how to block the web UI when Jitsi uses the room name as the start
-    # of the URL...
-
+    # Pass all traffic through from JITSI port 443 to internal port 8000 to serve Jitsi-Meet
+    # and its web UI. HTTP traffic is SSL-terminated here, while websocket traffic (above)
+    # reconnects-as-encrypted to the internal HTTPS server on port 8443.
     location / {
         proxy_pass http://localhost:8000;
     }
