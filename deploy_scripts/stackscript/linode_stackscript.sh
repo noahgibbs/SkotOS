@@ -711,7 +711,7 @@ then
   # All the Jitsi-related configuration will need to be possible to put into ~skotos directories
   sudo -u skotos -g skotos mkdir -p ~skotos/.jitsi-meet-cfg/{web/letsencrypt,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
 
-  sed -i "s/PUBLIC_URL=https:\/\/meet.example.com=https:\/\/$FQDN_JITSI/" .env
+  sed -i "s/PUBLIC_URL=https:\/\/meet.example.com/https:\/\/$FQDN_JITSI/" .env
   sed -i "s/DOCKER_HOST_ADDRESS=1.1.1.1/DOCKER_HOST_ADDRESS=$IPADDR/" .env
 
   sudo -u skotos -g skotos docker-compose up -d
