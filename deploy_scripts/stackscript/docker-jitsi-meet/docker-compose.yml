@@ -3,7 +3,7 @@ version: '3'
 services:
     # Frontend
     web:
-        image: jitsi/web:stable-5963
+        image: jitsi/web:stable-5765-1
         restart: ${RESTART_POLICY}
         ports:
             - '${HTTP_PORT}:80'
@@ -13,7 +13,6 @@ services:
             - ${CONFIG}/transcripts:/usr/share/jitsi-meet/transcripts:Z
         environment:
             - ENABLE_COLIBRI_WEBSOCKET
-            - ENABLE_FLOC
             - ENABLE_LETSENCRYPT
             - ENABLE_HTTP_REDIRECT
             - ENABLE_HSTS
@@ -34,7 +33,6 @@ services:
             - CHROME_EXTENSION_BANNER_JSON
             - CONFCODE_URL
             - CONFIG_EXTERNAL_CONNECT
-            - DEFAULT_LANGUAGE
             - DEPLOYMENTINFO_ENVIRONMENT
             - DEPLOYMENTINFO_ENVIRONMENT_TYPE
             - DEPLOYMENTINFO_REGION
@@ -108,13 +106,15 @@ services:
             - TOKEN_AUTH_URL
         networks:
             meet.jitsi:
+                aliases:
+                    - ${XMPP_DOMAIN}
 
     # XMPP server
     #   - port 5280 is unsecured BOSH (XMPP-over-HTTP)
     #   - port 5222 is unsecured XMPP (or maybe secured with TLS, but only for Jitsi config?)
     #   - port 5347 is a secondary XMPP connection port that jicofo uses for some reason
     prosody:
-        image: jitsi/prosody:stable-5963
+        image: jitsi/prosody:stable-5765-1
         restart: ${RESTART_POLICY}
         expose:
             - '5222'
@@ -185,7 +185,7 @@ services:
 
     # Focus component
     jicofo:
-        image: jitsi/jicofo:stable-5963
+        image: jitsi/jicofo:stable-5765-1
         restart: ${RESTART_POLICY}
         volumes:
             - ${CONFIG}/jicofo:/config:Z
@@ -231,7 +231,7 @@ services:
 
     # Video bridge
     jvb:
-        image: jitsi/jvb:stable-5963
+        image: jitsi/jvb:stable-5765-1
         restart: ${RESTART_POLICY}
         ports:
             - '${JVB_PORT}:${JVB_PORT}/udp'

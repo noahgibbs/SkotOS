@@ -1,30 +1,11 @@
-## stable-5963
-
-Based on stable release 5963.
-
-* 6f6fe77 prosody: enable limits
-* db3d790 prosody: fix: restrict room creation to jicofo (#1059)
-* 281db36 misc: working on latest
-
-## stable-5870
-
-Based on stable release 5870.
-
-* d9b84cf jibri: set base URL for joining meetings
-* a77a43e jibri: update default Chrome version to 90
-* a90e4ce doc: drop confusing port number from PUBLIC_URL
-* 8620caa doc: clarify env variable
-* 6f52f71 web: add FLoC environment variable
-* 014aa59 web: add default language variable
-* ce25bf6 doc: update CHANGELOG
-* 6bf1336 misc: working on latest
-
 ## stable-5765-1
 
-Based on stable release 5765.
+Based on stable release 5765-1.
 
+* 2900680 Revert "misc: add support for sentry logging"
 * 7a47202 jicofo: make sure client-proxy is properly configured
 * 5c32833 web: add start environment variables START_WITH_AUDIO_MUTED; START_SILENT; START_WITH_VIDEO_MUTED
+* 8d2a29f misc: add support for sentry logging
 * 3d93f2b misc: working on latest
 
 ## stable-5765
